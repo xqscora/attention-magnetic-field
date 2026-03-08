@@ -2,7 +2,7 @@
 
 **The Magnetic Field Model of Attention (MFA)** — a unified framework in which attentional intensity decays as F = S/r^α, deriving α = 2 from first principles across three independent disciplines.
 
-[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.18900943.svg)](https://doi.org/10.5281/zenodo.18900943)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.18900059.svg)](https://doi.org/10.5281/zenodo.18900059)
 
 ## Overview
 
@@ -26,7 +26,7 @@ Six field equations formalize attentional gradients, capture, energy conservatio
 
 The full manuscript is available as a preprint:
 
-> Zeng, C. (2026). Attention as a Magnetic Field. *Zenodo*. https://doi.org/10.5281/zenodo.18900943
+> Zeng, C. (2026). Attention as a Magnetic Field. *Zenodo*. https://doi.org/10.5281/zenodo.18900059
 
 ## Repository Structure
 
@@ -73,7 +73,7 @@ If you use this code or framework, please cite:
   title={Attention as a Magnetic Field},
   author={Zeng, Cora},
   year={2026},
-  doi={10.5281/zenodo.18900943},
+  doi={10.5281/zenodo.18900059},
   publisher={Zenodo}
 }
 ```
