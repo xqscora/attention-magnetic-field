@@ -56,6 +56,9 @@ Three pre-registered behavioral experiments testing MFA's core predictions, buil
 - **Attention checks** -- catch trials every ~40 trials to flag inattentive participants
 - **Multi-platform data saving** -- automatic JATOS integration; CSV download fallback
 - **Deterministic stimuli** -- all randomized trial properties pre-computed at generation to prevent redraw artifacts
+- **Informed consent** -- built-in consent form with study info, risks, confidentiality, and voluntary withdrawal
+- **Data quality monitoring** -- real-time accuracy/RT warnings during break screens; flags fast responses and timeouts
+- **Browser compatibility** -- automatic screen size and device check at experiment start
 
 ### Running Locally
 
@@ -66,6 +69,8 @@ python -m http.server 8080
 
 ## Analysis Scripts
 
+### Literature Reanalysis (`analysis/`)
+
 | Script | Description |
 |---|---|
 | `attention_gradient_data.py` | Spatial gradient data extraction and curve fitting |
@@ -73,8 +78,17 @@ python -m http.server 8080
 | `aic_bic_analysis.py` | AIC/BIC model comparison across datasets |
 | `multi_dataset_analysis.py` | Multi-dataset meta-analytic comparison |
 
+### Experiment Data Analysis (`experiments/analysis/`)
+
+| Script | Description |
+|---|---|
+| `analyze_exp1.py` | Gradient decay model fitting (power-law vs Gaussian vs exponential), AIC/BIC, RT × eccentricity plots |
+| `analyze_exp2.py` | Compatibility effect × load, sigmoid vs step-function comparison, distance interaction |
+| `analyze_exp3.py` | OEQII subscale scoring, distractor-type RT, OE × capture correlations |
+
 ```bash
-pip install numpy scipy matplotlib
+pip install numpy scipy pandas matplotlib
+python experiments/analysis/analyze_exp1.py data/
 ```
 
 ## Simulation
