@@ -1,12 +1,12 @@
 # Attention as a Magnetic Field
 
-**The Magnetic Field Model of Attention (MFA)** — a unified framework in which attentional intensity decays as F = S/r^α, deriving α = 2 from first principles across three independent disciplines.
+**The Magnetic Field Model of Attention (MFA)** -- a unified framework in which attentional intensity decays as F = S/r^alpha, deriving alpha = 2 from first principles across three independent disciplines.
 
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.18900059.svg)](https://doi.org/10.5281/zenodo.18900059)
 
 ## Overview
 
-Five decades of attention research have produced five major but isolated theories: the spotlight model, gradient model, perceptual load theory, resource theory, and spreading activation. The MFA unifies all five within a single field equation, deriving the exponent α = 2 independently from:
+Five decades of attention research have produced five major but isolated theories: the spotlight model, gradient model, perceptual load theory, resource theory, and spreading activation. The MFA unifies all five within a single field equation, deriving the exponent alpha = 2 independently from:
 
 1. **Geometric flux conservation** (physics)
 2. **Quadratic wiring-cost optimization** (information theory / neuroscience)
@@ -24,17 +24,44 @@ Six field equations formalize attentional gradients, capture, energy conservatio
 
 ## Paper
 
-The full manuscript is available as a preprint:
+The full manuscript with supplementary materials and figures is available on Zenodo:
 
 > Zeng, C. (2026). Attention as a Magnetic Field. *Zenodo*. https://doi.org/10.5281/zenodo.18900059
+
+Pre-registration: [OSF -- Empirical Tests of the MFA](https://osf.io)
 
 ## Repository Structure
 
 ```
-├── analysis/        # Python scripts for data reanalysis
-├── experiments/     # jsPsych behavioral experiments (3 studies)
-├── figures/         # Main figures and supplementary simulation screenshots
-└── simulation/      # Unity simulation source (Assets + ProjectSettings)
+├── analysis/        # Python scripts for data reanalysis (AIC, gradient, load)
+├── experiments/     # jsPsych 7.3.4 behavioral experiments (3 studies)
+├── figures/         # Main figures (Fig 1-6) and supplementary (Fig S1-S4)
+└── simulation/      # Unity interactive simulation (4 scenes)
+```
+
+## Experiments
+
+Three pre-registered behavioral experiments testing MFA's core predictions, built with [jsPsych 7.3.4](https://www.jspsych.org/):
+
+| Experiment | Prediction | Paradigm | Trials | Duration |
+|---|---|---|---|---|
+| [Exp 1](experiments/exp1_gradient.html) | Attentional gradient follows 1/r² decay | Modified Posner cueing (8 eccentricities) | 640 | ~35 min |
+| [Exp 2](experiments/exp2_load.html) | Load-distractor function is continuous sigmoid | Modified Lavie flanker (8 load levels x 3 congruency x 2 distance) | 960 | ~45 min |
+| [Exp 3](experiments/exp3_oe.html) | OE profiles predict dimension-specific capture | OEQII questionnaire + letter ID with 5 distractor types | 300 + survey | ~45 min |
+
+### Features
+
+- **Visual angle calibration** -- credit-card-based virtual chinrest for accurate eccentricity control
+- **Participant ID** -- auto-reads URL parameters (Prolific `PROLIFIC_PID`, JATOS `workerId`) with manual fallback
+- **Attention checks** -- catch trials every ~40 trials to flag inattentive participants
+- **Multi-platform data saving** -- automatic JATOS integration; CSV download fallback
+- **Deterministic stimuli** -- all randomized trial properties pre-computed at generation to prevent redraw artifacts
+
+### Running Locally
+
+```bash
+python -m http.server 8080
+# Open http://localhost:8080/experiments/
 ```
 
 ## Analysis Scripts
@@ -46,46 +73,26 @@ The full manuscript is available as a preprint:
 | `aic_bic_analysis.py` | AIC/BIC model comparison across datasets |
 | `multi_dataset_analysis.py` | Multi-dataset meta-analytic comparison |
 
-### Requirements
-
-```
-numpy
-scipy
-matplotlib
-```
-
-## Experiments
-
-Three pre-registered behavioral experiments testing MFA's core predictions, built with [jsPsych 7.3.4](https://www.jspsych.org/):
-
-| Experiment | Prediction | Paradigm | Trials |
-|---|---|---|---|
-| [Exp 1](experiments/exp1_gradient.html) | Attentional gradient follows 1/r² decay | Modified Posner cueing (8 eccentricities) | 640 |
-| [Exp 2](experiments/exp2_load.html) | Load–distractor function is continuous sigmoid | Modified Lavie flanker (8 load levels) | 960 |
-| [Exp 3](experiments/exp3_oe.html) | OE profiles predict dimension-specific capture | OEQII + letter ID with 5 distractor types | 300 |
-
-Features: visual angle calibration, attention check trials, Prolific/JATOS integration, multi-platform data export.
-
 ```bash
-# Run locally
-python -m http.server 8080
-# Open http://localhost:8080/experiments/
+pip install numpy scipy matplotlib
 ```
 
 ## Simulation
 
 An interactive Unity simulation instantiates all six MFA equations across four scenes:
 
-1. **Comparison** — Power-law vs Gaussian decay side-by-side
-2. **Attention Life** — Auto-evolving demo cycling through focus, distraction, task switching, ADHD, hyperfocus, and flow
-3. **Multi-Task** — Interactive superposition with energy conservation
-4. **Curvature** — Geometric interpretation: attention as curvature of connectivity space
+1. **Comparison** -- Power-law vs Gaussian decay side-by-side
+2. **Attention Life** -- Auto-evolving demo cycling through focus, distraction, task switching, ADHD, hyperfocus, and flow
+3. **Multi-Task** -- Interactive superposition with energy conservation
+4. **Curvature** -- Geometric interpretation: attention as curvature of connectivity space
 
-Built with Unity 2022 LTS.
+Built with Unity 2022 LTS. Open `simulation/` in Unity Editor to run.
+
+## Figures
+
+Main figures (Fig 1-6) and supplementary simulation screenshots (Fig S1-S4) are in `figures/`. All figures are also available on [Zenodo](https://doi.org/10.5281/zenodo.18900059).
 
 ## Citation
-
-If you use this code or framework, please cite:
 
 ```bibtex
 @article{zeng2026attention,
@@ -103,4 +110,4 @@ This work is licensed under [CC BY 4.0](https://creativecommons.org/licenses/by/
 
 ## Contact
 
-Cora Zeng — xqscora@gmail.com | ORCID: [0009-0006-4150-5568](https://orcid.org/0009-0006-4150-5568)
+Cora Zeng -- [xqscora@gmail.com](mailto:xqscora@gmail.com) | ORCID: [0009-0006-4150-5568](https://orcid.org/0009-0006-4150-5568)
