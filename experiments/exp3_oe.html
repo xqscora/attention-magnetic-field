@@ -1,0 +1,682 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MFA Experiment 3 — OE × Distractor Interaction</title>
+
+  <!-- jsPsych 7.3.4 -->
+  <script src="https://unpkg.com/jspsych@7.3.4"></script>
+  <link  href="https://unpkg.com/jspsych@7.3.4/css/jspsych.css" rel="stylesheet">
+
+  <!-- Plugins -->
+  <script src="https://unpkg.com/@jspsych/plugin-html-keyboard-response@1.1.3"></script>
+  <script src="https://unpkg.com/@jspsych/plugin-canvas-keyboard-response@1.1.3"></script>
+  <script src="https://unpkg.com/@jspsych/plugin-fullscreen@1.2.1"></script>
+  <script src="https://unpkg.com/@jspsych/plugin-call-function@1.1.3"></script>
+  <script src="https://unpkg.com/@jspsych/plugin-instructions@1.1.4"></script>
+  <script src="https://unpkg.com/@jspsych/plugin-survey-likert@1.1.3"></script>
+  <script src="https://unpkg.com/@jspsych/plugin-survey-multi-choice@1.1.3"></script>
+  <script src="https://unpkg.com/@jspsych/plugin-survey-text@1.1.3"></script>
+
+  <script src="utils.js"></script>
+  <style>
+    body { background: #333; margin: 0; overflow: hidden; }
+    /* Override jsPsych survey styles for dark theme */
+    .jspsych-survey-likert-statement { color: #fff !important; }
+    .jspsych-survey-multi-choice-question p { color: #fff !important; }
+    .jspsych-survey-text #jspsych-survey-text-0 p { color: #fff !important; }
+  </style>
+</head>
+<body>
+<script>
+/*  ══════════════════════════════════════════════════════════════
+    EXPERIMENT 3 — Overexcitability × Distractor-Type Interaction
+    Tests MFA Prediction 3: Dimension-specific attentional capture
+    linked to individual OE profiles.
+
+    Phase A:  OEQII questionnaire (50 items, ~15 min)
+    Phase B:  Behavioral task — letter ID with 5 distractor types
+              5 types × 60 reps = 300 trials (~30 min)
+    ══════════════════════════════════════════════════════════════ */
+
+var CFG = {
+  distractorTypes: ['sensory', 'semantic', 'emotional', 'movement', 'neutral'],
+  repsPerType:     60,
+  distractorDeg:   5,       // distractor at 5° eccentricity
+  letterSizeDeg:   0.8,
+  fixSizePx:       20,
+
+  // Timing
+  fixDur:    500,
+  maxRT:     2000,
+  itiMin:    800,
+  itiMax:    1200,
+
+  // Keys
+  keyT: 'f',
+  keyL: 'j',
+
+  practiceTrials: 15,   // 3 per distractor type
+  trialsPerBlock: 60,
+
+  bgColor: '#333333',
+
+  // Distractor visual properties
+  distractorSize: 50   // px base size for distractor stimuli
+};
+
+// ── OEQII Questionnaire Items ────────────────────────────────
+// Overexcitability Questionnaire Two (Falk et al., 1999)
+// 50 items, 5 subscales: Psychomotor, Sensual, Intellectual,
+// Imaginational, Emotional (10 items each)
+
+var OEQII_ITEMS = [
+  // Psychomotor OE (items 1-10)
+  { q: "I have a strong need to move and be physically active.", sub: "psychomotor" },
+  { q: "I talk a lot.", sub: "psychomotor" },
+  { q: "I act impulsively.", sub: "psychomotor" },
+  { q: "I am very competitive.", sub: "psychomotor" },
+  { q: "I find it hard to sit still.", sub: "psychomotor" },
+  { q: "I feel a lot of nervous energy.", sub: "psychomotor" },
+  { q: "I am energetic and active.", sub: "psychomotor" },
+  { q: "I tend to fidget or tap my fingers.", sub: "psychomotor" },
+  { q: "I need to be doing something all the time.", sub: "psychomotor" },
+  { q: "I have a lot of physical energy.", sub: "psychomotor" },
+
+  // Sensual OE (items 11-20)
+  { q: "I notice and appreciate textures of fabric, clothing, and other materials.", sub: "sensual" },
+  { q: "I enjoy beautiful scenery, sounds, or smells.", sub: "sensual" },
+  { q: "I am very sensitive to tastes and flavors.", sub: "sensual" },
+  { q: "I find great pleasure in music.", sub: "sensual" },
+  { q: "I am very aware of different smells and fragrances.", sub: "sensual" },
+  { q: "I take delight in beautiful things.", sub: "sensual" },
+  { q: "I notice small aesthetic details that others miss.", sub: "sensual" },
+  { q: "I am very sensitive to loud noises or bright lights.", sub: "sensual" },
+  { q: "I am moved by beauty in nature.", sub: "sensual" },
+  { q: "I notice and enjoy interesting visual patterns.", sub: "sensual" },
+
+  // Intellectual OE (items 21-30)
+  { q: "I love to learn new things.", sub: "intellectual" },
+  { q: "I ask a lot of questions.", sub: "intellectual" },
+  { q: "I enjoy solving difficult problems.", sub: "intellectual" },
+  { q: "I am curious about how things work.", sub: "intellectual" },
+  { q: "I love reading and acquiring new knowledge.", sub: "intellectual" },
+  { q: "I enjoy thinking about abstract concepts and ideas.", sub: "intellectual" },
+  { q: "I tend to analyze situations and search for meaning.", sub: "intellectual" },
+  { q: "I concentrate intensely when interested in something.", sub: "intellectual" },
+  { q: "I am fascinated by intellectual challenges.", sub: "intellectual" },
+  { q: "I often think about moral and ethical issues.", sub: "intellectual" },
+
+  // Imaginational OE (items 31-40)
+  { q: "I have a vivid imagination.", sub: "imaginational" },
+  { q: "I often daydream and fantasize.", sub: "imaginational" },
+  { q: "I create imaginary worlds in my mind.", sub: "imaginational" },
+  { q: "I have very vivid dreams.", sub: "imaginational" },
+  { q: "I use metaphors and images when talking.", sub: "imaginational" },
+  { q: "I enjoy creating stories or poems.", sub: "imaginational" },
+  { q: "I sometimes mix reality with imagination.", sub: "imaginational" },
+  { q: "I can clearly visualize things in my mind.", sub: "imaginational" },
+  { q: "I am drawn to the mysterious and the unknown.", sub: "imaginational" },
+  { q: "I have a rich fantasy life.", sub: "imaginational" },
+
+  // Emotional OE (items 41-50)
+  { q: "I feel emotions very intensely.", sub: "emotional" },
+  { q: "I feel deep concern for others.", sub: "emotional" },
+  { q: "I get very attached to people.", sub: "emotional" },
+  { q: "I feel strong emotional reactions to music, art, or stories.", sub: "emotional" },
+  { q: "I am easily moved to tears.", sub: "emotional" },
+  { q: "I worry a lot about others.", sub: "emotional" },
+  { q: "I have strong feelings of empathy.", sub: "emotional" },
+  { q: "I feel both extreme highs and extreme lows.", sub: "emotional" },
+  { q: "I take criticism very personally.", sub: "emotional" },
+  { q: "I have intense feelings of joy or sorrow.", sub: "emotional" }
+];
+
+var LIKERT_SCALE = [
+  "Not at all like me",
+  "Slightly like me",
+  "Somewhat like me",
+  "Mostly like me",
+  "Very much like me"
+];
+
+// ── Initialise jsPsych ───────────────────────────────────────
+var jsPsych = initJsPsych({
+  on_finish: function () {
+    MFA.saveData(jsPsych, 'exp3_oe_' + Date.now() + '.csv');
+  }
+});
+
+var timeline = [];
+
+// ── Fullscreen ───────────────────────────────────────────────
+timeline.push({
+  type: jsPsychFullscreen,
+  fullscreen_mode: true,
+  message: '<div style="color:#fff; text-align:center; font-size:20px; margin:40px;">' +
+    '<h2>MFA Experiment 3: Individual Differences in Attention</h2>' +
+    '<p>This experiment has two parts:</p>' +
+    '<ul style="text-align:left; max-width:450px; margin:auto;">' +
+      '<li><strong>Part A</strong> — Questionnaire (~15 min)</li>' +
+      '<li><strong>Part B</strong> — Visual task (~30 min)</li>' +
+    '</ul>' +
+    '<p>Total: approximately <strong>45 minutes</strong>.</p>' +
+    '<p>Click below to enter fullscreen.</p></div>'
+});
+
+// ── Participant ID ───────────────────────────────────────────
+timeline.push(MFA.buildParticipantIdTrial(jsPsych));
+
+// ── Screen info ──────────────────────────────────────────────
+timeline.push({
+  type: jsPsychCallFunction,
+  func: function () {
+    var info = MFA.getScreenInfo();
+    jsPsych.data.addProperties({
+      screen_width: info.windowWidth,
+      screen_height: info.windowHeight,
+      device_pixel_ratio: info.devicePixelRatio
+    });
+  }
+});
+
+// ── Calibration ──────────────────────────────────────────────
+timeline.push(MFA.buildCalibrationTrial(jsPsych));
+
+// ══════════════════════════════════════════════════════════════
+//  PHASE A — OEQII QUESTIONNAIRE
+// ══════════════════════════════════════════════════════════════
+
+timeline.push({
+  type: jsPsychInstructions,
+  pages: [
+    '<div ' + MFA.instructionStyle + '>' +
+      '<h2>Part A: Questionnaire</h2>' +
+      '<p>Please read each statement and rate how well it describes you.</p>' +
+      '<p>There are no right or wrong answers — please respond honestly.</p>' +
+      '<p>This will take about <strong>10–15 minutes</strong>.</p>' +
+    '</div>'
+  ],
+  show_clickable_nav: true,
+  button_label_next: 'Begin Questionnaire'
+});
+
+// Present OEQII in pages of 10 items
+var ITEMS_PER_PAGE = 10;
+var nPages = Math.ceil(OEQII_ITEMS.length / ITEMS_PER_PAGE);
+
+for (var pg = 0; pg < nPages; pg++) {
+  (function (pageIdx) {
+    var startItem = pageIdx * ITEMS_PER_PAGE;
+    var endItem   = Math.min(startItem + ITEMS_PER_PAGE, OEQII_ITEMS.length);
+    var pageItems = OEQII_ITEMS.slice(startItem, endItem);
+
+    var questions = [];
+    for (var qi = 0; qi < pageItems.length; qi++) {
+      questions.push({
+        prompt: '<span style="color:#fff;">' + (startItem + qi + 1) + '. ' +
+                pageItems[qi].q + '</span>',
+        labels: LIKERT_SCALE,
+        required: true
+      });
+    }
+
+    timeline.push({
+      type: jsPsychSurveyLikert,
+      preamble: '<p style="color:#aaa; font-size:14px;">Page ' +
+                (pageIdx + 1) + ' of ' + nPages + '</p>',
+      questions: questions,
+      button_label: (pageIdx < nPages - 1) ? 'Next Page' : 'Finish Questionnaire',
+      data: {
+        phase: 'oeqii',
+        page: pageIdx + 1,
+        item_start: startItem,
+        item_end: endItem
+      },
+      on_finish: function (data) {
+        // Parse responses and tag with subscale info
+        var responses = data.response;
+        var parsed = {};
+        for (var key in responses) {
+          var idx = parseInt(key.replace('Q', ''));
+          var globalIdx = data.item_start + idx;
+          if (globalIdx < OEQII_ITEMS.length) {
+            parsed['oeqii_' + (globalIdx + 1)] = responses[key];
+            parsed['oeqii_' + (globalIdx + 1) + '_subscale'] = OEQII_ITEMS[globalIdx].sub;
+          }
+        }
+        data.oeqii_parsed = JSON.stringify(parsed);
+      }
+    });
+  })(pg);
+}
+
+// Demographics
+timeline.push({
+  type: jsPsychSurveyMultiChoice,
+  preamble: '<h3 style="color:#fff;">Demographics</h3>',
+  questions: [
+    {
+      prompt: '<span style="color:#fff;">Age range:</span>',
+      options: ['18-24', '25-34', '35-44', '45+'],
+      required: true
+    },
+    {
+      prompt: '<span style="color:#fff;">Gender:</span>',
+      options: ['Male', 'Female', 'Non-binary', 'Prefer not to say'],
+      required: true
+    },
+    {
+      prompt: '<span style="color:#fff;">Have you ever been diagnosed with ADHD?</span>',
+      options: ['Yes', 'No', 'Unsure / Under assessment'],
+      required: true
+    },
+    {
+      prompt: '<span style="color:#fff;">Is English your first language?</span>',
+      options: ['Yes', 'No, but fluent', 'No, intermediate'],
+      required: true
+    }
+  ],
+  button_label: 'Continue to Part B',
+  data: { phase: 'demographics' }
+});
+
+// ══════════════════════════════════════════════════════════════
+//  PHASE B — BEHAVIORAL TASK
+// ══════════════════════════════════════════════════════════════
+
+var keyReminder3 = '<p style="color:#aaa; font-size:14px; margin-top:30px;">' +
+  'Press <strong>F</strong> for T &nbsp;|&nbsp; Press <strong>J</strong> for L</p>';
+
+timeline.push({
+  type: jsPsychInstructions,
+  pages: [
+    '<div ' + MFA.instructionStyle + '>' +
+      '<h2>Part B: Visual Task</h2>' +
+      '<p>Now you will do a letter identification task.</p>' +
+      '<p>A target letter (<strong style="color:#4af;">T</strong> or ' +
+      '<strong style="color:#4af;">L</strong>) will appear at the center of the screen.</p>' +
+      '<p>Identify it as quickly and accurately as possible.</p>' +
+      keyReminder3 +
+    '</div>',
+
+    '<div ' + MFA.instructionStyle + '>' +
+      '<h2>Ignore the Distractors!</h2>' +
+      '<p>On each trial, a <strong style="color:#f88;">distractor</strong> will also appear ' +
+      'in the periphery. It may be:</p>' +
+      '<ul style="text-align:left; max-width:500px; margin:auto;">' +
+        '<li>A <strong>color flash</strong> (brief bright color)</li>' +
+        '<li>A <strong>word</strong></li>' +
+        '<li>A <strong>face</strong> (schematic)</li>' +
+        '<li>A <strong>moving dot</strong> pattern</li>' +
+        '<li>A <strong>gray shape</strong> (control)</li>' +
+      '</ul>' +
+      '<p>Always <strong>ignore</strong> the distractor and focus on the central letter.</p>' +
+      keyReminder3 +
+    '</div>',
+
+    '<div ' + MFA.instructionStyle + '>' +
+      '<h2>Ready?</h2>' +
+      '<p>There are <strong>300 trials</strong> in <strong>5 blocks</strong> of 60.</p>' +
+      '<p>Breaks are provided between blocks.</p>' +
+      '<p>We start with a short <strong>practice</strong> (15 trials with feedback).</p>' +
+    '</div>'
+  ],
+  show_clickable_nav: true,
+  button_label_previous: 'Back',
+  button_label_next: 'Next'
+});
+
+// ── Trial generation ─────────────────────────────────────────
+
+var SEMANTIC_WORDS = ['DOCTOR', 'TABLE', 'RIVER', 'MUSIC', 'DREAM',
+                      'BRAIN', 'LIGHT', 'OCEAN', 'STORM', 'CLOCK'];
+
+function generateOETrials(repsPerType, isPractice) {
+  var trials = [];
+  for (var di = 0; di < CFG.distractorTypes.length; di++) {
+    for (var r = 0; r < repsPerType; r++) {
+      trials.push({
+        distractor_type:  CFG.distractorTypes[di],
+        target_letter:    MFA.randChoice(['T', 'L']),
+        distractor_side:  MFA.randChoice(['left', 'right']),
+        sensory_color:    MFA.randChoice(['#ff2222', '#2255ff']),
+        semantic_word:    MFA.randChoice(SEMANTIC_WORDS),
+        emotional_valence: MFA.randChoice(['happy', 'fearful']),
+        movement_phase:   Math.random(),
+        is_practice:      !!isPractice
+      });
+    }
+  }
+  return MFA.shuffle(trials);
+}
+
+// ── Distractor drawing functions ─────────────────────────────
+
+function drawSchematicFace(ctx, cx, cy, size, emotion) {
+  // Simplified schematic face (avoids needing image files)
+  var r = size / 2;
+  // Head
+  ctx.strokeStyle = '#ffd700';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.arc(cx, cy, r, 0, 2 * Math.PI);
+  ctx.stroke();
+  // Eyes
+  var eyeY = cy - r * 0.2;
+  var eyeSpacing = r * 0.35;
+  ctx.fillStyle = '#ffd700';
+  ctx.beginPath();
+  ctx.arc(cx - eyeSpacing, eyeY, r * 0.08, 0, 2 * Math.PI);
+  ctx.fill();
+  ctx.beginPath();
+  ctx.arc(cx + eyeSpacing, eyeY, r * 0.08, 0, 2 * Math.PI);
+  ctx.fill();
+  // Mouth
+  var mouthY = cy + r * 0.3;
+  ctx.beginPath();
+  if (emotion === 'happy') {
+    ctx.arc(cx, mouthY - r * 0.1, r * 0.3, 0.1 * Math.PI, 0.9 * Math.PI);
+  } else {
+    ctx.arc(cx, mouthY + r * 0.2, r * 0.3, 1.1 * Math.PI, 1.9 * Math.PI);
+  }
+  ctx.stroke();
+}
+
+function drawDistractor(ctx, trial, x, y) {
+  var s = CFG.distractorSize;
+
+  switch (trial.distractor_type) {
+    case 'sensory':
+      ctx.fillStyle = trial.sensory_color;
+      ctx.globalAlpha = 0.9;
+      ctx.beginPath();
+      ctx.arc(x, y, s * 0.6, 0, 2 * Math.PI);
+      ctx.fill();
+      ctx.globalAlpha = 1.0;
+      break;
+
+    case 'semantic':
+      ctx.font = 'bold 18px Arial';
+      ctx.fillStyle = '#ffcc44';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(trial.semantic_word, x, y);
+      break;
+
+    case 'emotional':
+      drawSchematicFace(ctx, x, y, s, trial.emotional_valence);
+      break;
+
+    case 'movement':
+      ctx.fillStyle = '#88ff88';
+      var dotR = s * 0.15 + s * 0.45 * trial.movement_phase;
+      ctx.globalAlpha = 0.8;
+      ctx.beginPath();
+      ctx.arc(x, y, dotR, 0, 2 * Math.PI);
+      ctx.fill();
+      ctx.strokeStyle = '#88ff88';
+      ctx.lineWidth = 1.5;
+      for (var a = 0; a < 6; a++) {
+        var angle = a * Math.PI / 3;
+        var inner = dotR + 3;
+        var outer = dotR + 8 + 6 * trial.movement_phase;
+        ctx.beginPath();
+        ctx.moveTo(x + inner * Math.cos(angle), y + inner * Math.sin(angle));
+        ctx.lineTo(x + outer * Math.cos(angle), y + outer * Math.sin(angle));
+        ctx.stroke();
+      }
+      ctx.globalAlpha = 1.0;
+      break;
+
+    case 'neutral':
+      ctx.fillStyle = '#888';
+      ctx.fillRect(x - s * 0.35, y - s * 0.35, s * 0.7, s * 0.7);
+      break;
+  }
+}
+
+// ── Stimulus drawing ─────────────────────────────────────────
+
+function drawOETrial(c, trial) {
+  var ctx = c.getContext('2d');
+  var cx  = c.width / 2;
+  var cy  = c.height / 2;
+  MFA.clearCanvas(ctx, c.width, c.height, CFG.bgColor);
+
+  // Fixation (dimmed during stimulus)
+  MFA.drawFixation(ctx, cx, cy, CFG.fixSizePx, '#666');
+
+  // Target letter at center
+  var letterPx = MFA.degToPx(CFG.letterSizeDeg);
+  MFA.drawLetter(ctx, trial.target_letter, cx, cy, letterPx);
+
+  // Distractor in periphery
+  var distPx = MFA.degToPx(CFG.distractorDeg);
+  var sign   = (trial.distractor_side === 'left') ? -1 : 1;
+  var distX  = cx + sign * distPx;
+  drawDistractor(ctx, trial, distX, cy);
+}
+
+// ── Build trial nodes ────────────────────────────────────────
+
+function buildOETrialNodes(trialList, withFeedback) {
+  var nodes = [];
+  var canvasSize = function () { return [window.innerHeight, window.innerWidth]; };
+
+  for (var t = 0; t < trialList.length; t++) {
+    (function (trial) {
+
+      // ── Catch trial ──
+      if (trial.is_catch) {
+        var catchKey = (trial.target_letter === 'T') ? CFG.keyT : CFG.keyL;
+        nodes.push({
+          type: jsPsychCanvasKeyboardResponse,
+          canvas_size: canvasSize,
+          stimulus: function (c) {
+            var ctx = c.getContext('2d');
+            MFA.clearCanvas(ctx, c.width, c.height, CFG.bgColor);
+            MFA.drawFixation(ctx, c.width / 2, c.height / 2, CFG.fixSizePx);
+          },
+          choices: 'NO_KEYS',
+          trial_duration: 500,
+          data: { phase: 'catch_fixation' }
+        });
+        nodes.push({
+          type: jsPsychCanvasKeyboardResponse,
+          canvas_size: canvasSize,
+          stimulus: function (c) {
+            var ctx = c.getContext('2d');
+            var cx = c.width / 2, cy = c.height / 2;
+            MFA.clearCanvas(ctx, c.width, c.height, CFG.bgColor);
+            ctx.font = 'bold 60px Courier New, monospace';
+            ctx.fillStyle = '#44ff44';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(trial.target_letter, cx, cy);
+          },
+          choices: [CFG.keyT, CFG.keyL],
+          trial_duration: CFG.maxRT,
+          data: {
+            phase: 'response', task: 'catch',
+            target_letter: trial.target_letter,
+            correct_key: catchKey, is_catch: true, is_practice: false
+          },
+          on_finish: function (data) {
+            data.correct = (data.response === data.correct_key);
+            data.timed_out = (data.response === null);
+          }
+        });
+        return;
+      }
+
+      // ── Normal trial ──
+      // Fixation
+      nodes.push({
+        type: jsPsychCanvasKeyboardResponse,
+        canvas_size: canvasSize,
+        stimulus: function (c) {
+          var ctx = c.getContext('2d');
+          MFA.clearCanvas(ctx, c.width, c.height, CFG.bgColor);
+          MFA.drawFixation(ctx, c.width / 2, c.height / 2, CFG.fixSizePx);
+        },
+        choices: 'NO_KEYS',
+        trial_duration: CFG.fixDur,
+        data: { phase: 'fixation' }
+      });
+
+      // Stimulus + response
+      var correctKey = (trial.target_letter === 'T') ? CFG.keyT : CFG.keyL;
+      nodes.push({
+        type: jsPsychCanvasKeyboardResponse,
+        canvas_size: canvasSize,
+        stimulus: function (c) { drawOETrial(c, trial); },
+        choices: [CFG.keyT, CFG.keyL],
+        trial_duration: CFG.maxRT,
+        data: {
+          phase:            'response',
+          task:             'oe_distractor',
+          distractor_type:  trial.distractor_type,
+          target_letter:    trial.target_letter,
+          distractor_side:  trial.distractor_side,
+          correct_key:      correctKey,
+          is_practice:      trial.is_practice,
+          is_catch:         false
+        },
+        on_finish: function (data) {
+          data.correct   = (data.response === data.correct_key);
+          data.timed_out = (data.response === null);
+        }
+      });
+
+      // Feedback (practice)
+      if (withFeedback) {
+        nodes.push({
+          type: jsPsychHtmlKeyboardResponse,
+          stimulus: function () {
+            var last = jsPsych.data.get().last(1).values()[0];
+            if (last.timed_out) return '<p style="font-size:28px; color:#f44;">Too slow!</p>';
+            return last.correct
+              ? '<p style="font-size:28px; color:#4f4;">Correct ✓</p>'
+              : '<p style="font-size:28px; color:#f44;">Incorrect ✗</p>';
+          },
+          choices: 'NO_KEYS',
+          trial_duration: 500
+        });
+      }
+
+      // ITI
+      nodes.push({
+        type: jsPsychHtmlKeyboardResponse,
+        stimulus: '',
+        choices: 'NO_KEYS',
+        trial_duration: MFA.randInt(CFG.itiMin, CFG.itiMax)
+      });
+    })(trialList[t]);
+  }
+  return nodes;
+}
+
+// ── Practice ─────────────────────────────────────────────────
+var practiceTrials = generateOETrials(3, true); // 3 per type = 15
+var practiceNodes  = buildOETrialNodes(practiceTrials, true);
+
+timeline.push({
+  type: jsPsychHtmlKeyboardResponse,
+  stimulus: '<div ' + MFA.instructionStyle + '>' +
+    '<h2>Practice Block</h2>' +
+    '<p><strong>' + CFG.practiceTrials + '</strong> practice trials with feedback.</p>' +
+    keyReminder3 +
+    '<p style="color:#aaa; margin-top:20px;">Press any key to start.</p></div>',
+  choices: 'ALL_KEYS'
+});
+for (var p = 0; p < practiceNodes.length; p++) timeline.push(practiceNodes[p]);
+
+// ── Main experiment ──────────────────────────────────────────
+var mainTrials = generateOETrials(CFG.repsPerType, false);
+// 5 types × 60 reps = 300 trials
+mainTrials = MFA.insertCatchTrials(mainTrials, 40);
+var nBlocks = Math.ceil(mainTrials.length / CFG.trialsPerBlock);
+
+timeline.push({
+  type: jsPsychHtmlKeyboardResponse,
+  stimulus: '<div ' + MFA.instructionStyle + '>' +
+    '<h2>Main Experiment</h2>' +
+    '<p><strong>' + mainTrials.length + '</strong> trials in <strong>' +
+    nBlocks + '</strong> blocks.</p>' +
+    keyReminder3 +
+    '<p style="color:#aaa; margin-top:20px;">Press any key when ready.</p></div>',
+  choices: 'ALL_KEYS'
+});
+
+for (var b = 0; b < nBlocks; b++) {
+  var start = b * CFG.trialsPerBlock;
+  var end   = Math.min(start + CFG.trialsPerBlock, mainTrials.length);
+  var block = mainTrials.slice(start, end);
+  var nodes = buildOETrialNodes(block, false);
+  for (var i = 0; i < nodes.length; i++) timeline.push(nodes[i]);
+
+  if (b < nBlocks - 1) {
+    (function (bNum, total) {
+      timeline.push({
+        type: jsPsychHtmlKeyboardResponse,
+        stimulus: function () {
+          var resp = jsPsych.data.get().filter({ phase: 'response', is_practice: false });
+          var acc  = resp.count() > 0
+            ? Math.round(100 * resp.filter({ correct: true }).count() / resp.count()) : 0;
+          return '<div ' + MFA.instructionStyle + '>' +
+            '<h2>Break</h2>' +
+            '<p>Block ' + (bNum + 1) + ' / ' + total + '</p>' +
+            '<p>Accuracy: <strong>' + acc + '%</strong></p>' +
+            '<p>Rest as long as you need, then press any key.</p></div>';
+        },
+        choices: 'ALL_KEYS'
+      });
+    })(b, nBlocks);
+  }
+}
+
+// ── Debrief ──────────────────────────────────────────────────
+timeline.push({
+  type: jsPsychHtmlKeyboardResponse,
+  stimulus: function () {
+    var resp = jsPsych.data.get().filter({ phase: 'response', is_practice: false });
+    var acc  = resp.count() > 0
+      ? Math.round(100 * resp.filter({ correct: true }).count() / resp.count()) : 0;
+    var rt   = Math.round(resp.filter({ correct: true }).select('rt').mean());
+
+    // Per-distractor-type summary
+    var summary = '<table style="margin:auto; color:#fff; border-collapse:collapse;">' +
+      '<tr><th style="padding:5px 15px; border-bottom:1px solid #888;">Distractor</th>' +
+      '<th style="padding:5px 15px; border-bottom:1px solid #888;">Mean RT</th>' +
+      '<th style="padding:5px 15px; border-bottom:1px solid #888;">Accuracy</th></tr>';
+    for (var d = 0; d < CFG.distractorTypes.length; d++) {
+      var dtype = CFG.distractorTypes[d];
+      var dResp = resp.filter({ distractor_type: dtype });
+      var dCorr = dResp.filter({ correct: true });
+      var dRT   = dCorr.count() > 0 ? Math.round(dCorr.select('rt').mean()) : '-';
+      var dAcc  = dResp.count() > 0 ? Math.round(100 * dCorr.count() / dResp.count()) + '%' : '-';
+      summary += '<tr><td style="padding:5px 15px;">' + dtype + '</td>' +
+        '<td style="padding:5px 15px;">' + dRT + ' ms</td>' +
+        '<td style="padding:5px 15px;">' + dAcc + '</td></tr>';
+    }
+    summary += '</table>';
+
+    return '<div ' + MFA.instructionStyle + '>' +
+      '<h2>Experiment Complete!</h2>' +
+      '<p>Overall accuracy: <strong>' + acc + '%</strong> &nbsp;|&nbsp; ' +
+      'Mean RT: <strong>' + rt + ' ms</strong></p>' +
+      '<h3>Performance by Distractor Type</h3>' +
+      summary +
+      '<p style="color:#aaa; margin-top:30px;">Data downloading…<br>Press any key to finish.</p></div>';
+  },
+  choices: 'ALL_KEYS'
+});
+
+timeline.push({ type: jsPsychFullscreen, fullscreen_mode: false });
+
+jsPsych.run(timeline);
+</script>
+</body>
+</html>

@@ -31,7 +31,8 @@ The full manuscript is available as a preprint:
 ## Repository Structure
 
 ```
-├── analysis/       # Python scripts for data reanalysis
+├── analysis/        # Python scripts for data reanalysis
+├── experiments/     # jsPsych behavioral experiments (3 studies)
 ├── figures/         # Main figures and supplementary simulation screenshots
 └── simulation/      # Unity simulation source (Assets + ProjectSettings)
 ```
@@ -51,6 +52,24 @@ The full manuscript is available as a preprint:
 numpy
 scipy
 matplotlib
+```
+
+## Experiments
+
+Three pre-registered behavioral experiments testing MFA's core predictions, built with [jsPsych 7.3.4](https://www.jspsych.org/):
+
+| Experiment | Prediction | Paradigm | Trials |
+|---|---|---|---|
+| [Exp 1](experiments/exp1_gradient.html) | Attentional gradient follows 1/r² decay | Modified Posner cueing (8 eccentricities) | 640 |
+| [Exp 2](experiments/exp2_load.html) | Load–distractor function is continuous sigmoid | Modified Lavie flanker (8 load levels) | 960 |
+| [Exp 3](experiments/exp3_oe.html) | OE profiles predict dimension-specific capture | OEQII + letter ID with 5 distractor types | 300 |
+
+Features: visual angle calibration, attention check trials, Prolific/JATOS integration, multi-platform data export.
+
+```bash
+# Run locally
+python -m http.server 8080
+# Open http://localhost:8080/experiments/
 ```
 
 ## Simulation

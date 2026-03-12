@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MFA Experiment Suite</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+      min-height: 100vh;
+      color: #e0e0e0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .container {
+      max-width: 800px;
+      width: 90%;
+      padding: 50px 40px;
+    }
+    h1 {
+      font-size: 2.2em;
+      font-weight: 300;
+      letter-spacing: 2px;
+      margin-bottom: 8px;
+      color: #fff;
+    }
+    .subtitle {
+      font-size: 1em;
+      color: #8899bb;
+      margin-bottom: 50px;
+      line-height: 1.6;
+    }
+    .subtitle a { color: #6baaf7; text-decoration: none; }
+    .subtitle a:hover { text-decoration: underline; }
+    .card {
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 12px;
+      padding: 28px 32px;
+      margin-bottom: 20px;
+      transition: all 0.25s ease;
+      cursor: pointer;
+      text-decoration: none;
+      display: block;
+      color: inherit;
+    }
+    .card:hover {
+      background: rgba(255,255,255,0.1);
+      border-color: rgba(107,170,247,0.4);
+      transform: translateY(-2px);
+      box-shadow: 0 8px 30px rgba(0,0,0,0.3);
+    }
+    .card-header {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      margin-bottom: 10px;
+    }
+    .card-num {
+      background: #6baaf7;
+      color: #111;
+      width: 36px; height: 36px;
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 700; font-size: 16px;
+      flex-shrink: 0;
+    }
+    .card h2 { font-size: 1.15em; font-weight: 600; color: #fff; }
+    .card p { font-size: 0.9em; color: #99aabb; line-height: 1.6; margin-left: 50px; }
+    .card .meta {
+      margin-top: 12px; margin-left: 50px;
+      display: flex; gap: 20px; font-size: 0.8em; color: #667788;
+    }
+    .footer {
+      margin-top: 40px;
+      font-size: 0.8em;
+      color: #556677;
+      text-align: center;
+      line-height: 1.8;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>MFA Experiment Suite</h1>
+    <p class="subtitle">
+      Three empirical tests of the
+      <strong>Magnetic Field Model of Attention</strong> (Zeng, 2026)<br>
+      Pre-registered on <a href="https://osf.io" target="_blank">OSF</a> ·
+      Preprint on <a href="https://doi.org/10.5281/zenodo.18900059" target="_blank">Zenodo</a>
+    </p>
+
+    <a class="card" href="exp1_gradient.html">
+      <div class="card-header">
+        <div class="card-num">1</div>
+        <h2>Attentional Gradient Decay Function</h2>
+      </div>
+      <p>Tests whether spatial attention follows a power-law decay F = S/r<sup>α</sup>
+         rather than Gaussian or exponential. Modified Posner cueing paradigm with
+         targets at 8 eccentricities.</p>
+      <div class="meta">
+        <span>640 trials</span>
+        <span>~35 min</span>
+        <span>Prediction 1</span>
+      </div>
+    </a>
+
+    <a class="card" href="exp2_load.html">
+      <div class="card-header">
+        <div class="card-num">2</div>
+        <h2>Continuous Load–Distractor Function</h2>
+      </div>
+      <p>Tests whether distractor interference decreases as a continuous sigmoid
+         (not binary step) function of perceptual load. Modified Lavie flanker task
+         with 8 parametric load levels.</p>
+      <div class="meta">
+        <span>960 trials</span>
+        <span>~45 min</span>
+        <span>Prediction 2</span>
+      </div>
+    </a>
+
+    <a class="card" href="exp3_oe.html">
+      <div class="card-header">
+        <div class="card-num">3</div>
+        <h2>Overexcitability × Distractor Interaction</h2>
+      </div>
+      <p>Tests whether individual OE profiles predict dimension-specific distractor
+         vulnerability. OEQII questionnaire followed by letter identification with
+         five distractor types (sensory, semantic, emotional, movement, neutral).</p>
+      <div class="meta">
+        <span>OEQII + 300 trials</span>
+        <span>~45 min</span>
+        <span>Prediction 3</span>
+      </div>
+    </a>
+
+    <div class="footer">
+      Cora Zeng · Independent Researcher · 2026<br>
+      Built with <a href="https://www.jspsych.org" target="_blank" style="color:#6baaf7;">jsPsych 7.3</a>
+      · Compatible with JATOS / Prolific deployment
+    </div>
+  </div>
+</body>
+</html>

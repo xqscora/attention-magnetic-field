@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MFA Experiment 1 — Attentional Gradient</title>
+
+  <!-- jsPsych 7.3.4 -->
+  <script src="https://unpkg.com/jspsych@7.3.4"></script>
+  <link  href="https://unpkg.com/jspsych@7.3.4/css/jspsych.css" rel="stylesheet">
+
+  <!-- Plugins -->
+  <script src="https://unpkg.com/@jspsych/plugin-html-keyboard-response@1.1.3"></script>
+  <script src="https://unpkg.com/@jspsych/plugin-canvas-keyboard-response@1.1.3"></script>
+  <script src="https://unpkg.com/@jspsych/plugin-fullscreen@1.2.1"></script>
+  <script src="https://unpkg.com/@jspsych/plugin-call-function@1.1.3"></script>
+  <script src="https://unpkg.com/@jspsych/plugin-instructions@1.1.4"></script>
+  <script src="https://unpkg.com/@jspsych/plugin-survey-text@1.1.3"></script>
+
+  <!-- Shared utilities -->
+  <script src="utils.js"></script>
+
+  <style>
+    body { background: #333; margin: 0; overflow: hidden; }
+  </style>
+</head>
+<body>
+<script>
+/*  ══════════════════════════════════════════════════════════════
+    EXPERIMENT 1 — Attentional Gradient Decay Function
+    Tests: F(r) = S / r^α  (Prediction 1 of MFA)
+
+    Paradigm: Modified Posner exogenous cueing
+    DV:       RT, accuracy at 8 eccentricities
+    Design:   8 eccentricities × 2 validity (70/30) × 2 sides
+              40 reps per eccentricity–side cell  →  640 trials
+    ══════════════════════════════════════════════════════════════ */
+
+// ── Configuration ────────────────────────────────────────────
+var CFG = {
+  eccentricities: [1, 2, 4, 6, 8, 12, 16, 24],   // degrees
+  validProp:       0.70,
+  trialsPerCell:   40,      // per eccentricity × side
+  nDistractors:    2,       // O letters flanking target
+  distractorSpacingDeg: 1,  // vertical spacing between items in cluster
+  letterSizeDeg:   0.8,
+  cueSizeDeg:      1.2,
+  fixSizePx:       20,
+
+  // Timing (ms)
+  fixDur:    500,
+  cueDur:    100,
+  isiDur:    100,
+  maxRT:     2000,
+  itiMin:    800,
+  itiMax:    1200,
+
+  // Practice
+  practiceTrials: 16,
+
+  // Blocks & breaks
+  trialsPerBlock: 80,
+
+  // Response mapping
+  keyT: 'f',
+  keyL: 'j',
+
+  // Canvas
+  bgColor: '#333333'
+};
+
+// ── Initialise jsPsych ───────────────────────────────────────
+var jsPsych = initJsPsych({
+  on_finish: function () {
+    MFA.saveData(jsPsych, 'exp1_gradient_' + Date.now() + '.csv');
+  }
+});
+
+var timeline = [];
+
+// ── 1. Fullscreen ────────────────────────────────────────────
+timeline.push({
+  type: jsPsychFullscreen,
+  fullscreen_mode: true,
+  message: '<div style="color:#fff; text-align:center; font-size:20px; margin:40px;">' +
+    '<h2>MFA Experiment 1: Attentional Gradient</h2>' +
+    '<p>This experiment will take approximately <strong>35 minutes</strong>.</p>' +
+    '<p>Click the button below to enter fullscreen and begin.</p></div>'
+});
+
+// ── 1b. Participant ID ──────────────────────────────────────
+timeline.push(MFA.buildParticipantIdTrial(jsPsych));
+
+// ── 2. Screen size check ─────────────────────────────────────
+timeline.push({
+  type: jsPsychCallFunction,
+  func: function () {
+    var info = MFA.getScreenInfo();
+    jsPsych.data.addProperties({
+      screen_width: info.windowWidth,
+      screen_height: info.windowHeight,
+      device_pixel_ratio: info.devicePixelRatio
+    });
+  }
+});
+
+// ── 3. Calibration ───────────────────────────────────────────
+timeline.push(MFA.buildCalibrationTrial(jsPsych));
+
+// ── 4. Instructions ──────────────────────────────────────────
+timeline.push({
+  type: jsPsychInstructions,
+  pages: [
+    '<div ' + MFA.instructionStyle + '>' +
+      '<h2>Task Instructions</h2>' +
+      '<p>In this experiment, you will see letters appear on the screen.</p>' +
+      '<p>Your job is to identify the <strong>target letter</strong> as quickly and accurately as possible.</p>' +
+      '<p>The target is always either <strong style="font-size:28px; color:#4af;">T</strong> or ' +
+      '<strong style="font-size:28px; color:#4af;">L</strong>, surrounded by distractor letters ' +
+      '<strong style="font-size:28px; color:#888;">O</strong>.</p>' +
+      MFA.keyReminder +
+    '</div>',
+
+    '<div ' + MFA.instructionStyle + '>' +
+      '<h2>Trial Sequence</h2>' +
+      '<p>Each trial proceeds as follows:</p>' +
+      '<ol style="text-align:left; max-width:500px; margin:auto;">' +
+        '<li>A <strong>+</strong> fixation cross appears at the center. Keep your eyes on it.</li>' +
+        '<li>A brief <strong style="color:#ffdd00;">yellow box</strong> flashes at one location — this is the cue.</li>' +
+        '<li>After a short pause, the <strong>target letter</strong> and distractors appear.</li>' +
+        '<li>Press <strong>F</strong> if the target is T, or <strong>J</strong> if the target is L.</li>' +
+      '</ol>' +
+      '<p>The cue usually (but not always) indicates where the target will appear.</p>' +
+      '<p>Always keep your eyes on the central <strong>+</strong>.</p>' +
+    '</div>',
+
+    '<div ' + MFA.instructionStyle + '>' +
+      '<h2>Important</h2>' +
+      '<ul style="text-align:left; max-width:550px; margin:auto;">' +
+        '<li>Respond as <strong>quickly</strong> and <strong>accurately</strong> as possible.</li>' +
+        '<li>Do <strong>not</strong> move your eyes from the central cross.</li>' +
+        '<li>If you are unsure, make your best guess.</li>' +
+        '<li>There will be <strong>short breaks</strong> every 80 trials.</li>' +
+      '</ul>' +
+      '<p>We will start with a short <strong>practice block</strong> (16 trials with feedback).</p>' +
+    '</div>'
+  ],
+  show_clickable_nav: true,
+  button_label_previous: 'Back',
+  button_label_next: 'Next'
+});
+
+// ── Helper: generate trial list ──────────────────────────────
+
+function generateTrials(nPerCell, isPractice) {
+  var trials = [];
+  var eccs = CFG.eccentricities;
+  var sides = ['left', 'right'];
+
+  for (var ei = 0; ei < eccs.length; ei++) {
+    for (var si = 0; si < sides.length; si++) {
+      var ecc = eccs[ei];
+      var side = sides[si];
+      for (var rep = 0; rep < nPerCell; rep++) {
+        var isValid = Math.random() < CFG.validProp;
+        var targetEcc = ecc;
+        if (!isValid) {
+          var others = eccs.filter(function (e) { return e !== ecc; });
+          targetEcc = MFA.randChoice(others);
+        }
+        trials.push({
+          cue_eccentricity: ecc,
+          target_eccentricity: targetEcc,
+          cue_side: side,
+          target_side: side,
+          validity: isValid ? 'valid' : 'invalid',
+          target_letter: MFA.randChoice(['T', 'L']),
+          target_position: MFA.randInt(0, CFG.nDistractors),
+          is_practice: !!isPractice
+        });
+      }
+    }
+  }
+  return MFA.shuffle(trials);
+}
+
+// ── Helper: draw a single trial phase on canvas ──────────────
+
+function drawPhase(c, phase, trial) {
+  var ctx = c.getContext('2d');
+  var cx  = c.width / 2;
+  var cy  = c.height / 2;
+  MFA.clearCanvas(ctx, c.width, c.height, CFG.bgColor);
+
+  var letterSizePx = MFA.degToPx(CFG.letterSizeDeg);
+  var cueSizePx    = MFA.degToPx(CFG.cueSizeDeg);
+  var spacingPx    = MFA.degToPx(CFG.distractorSpacingDeg);
+
+  var sideSign = (trial.cue_side === 'left') ? -1 : 1;
+
+  // Fixation always visible
+  MFA.drawFixation(ctx, cx, cy, CFG.fixSizePx);
+
+  if (phase === 'cue') {
+    var cueX = cx + sideSign * MFA.degToPx(trial.cue_eccentricity);
+    MFA.drawCue(ctx, cueX, cy, cueSizePx);
+  }
+
+  if (phase === 'target') {
+    var targetSideSign = (trial.target_side === 'left') ? -1 : 1;
+    var targetX = cx + targetSideSign * MFA.degToPx(trial.target_eccentricity);
+
+    var targetPos = trial.target_position;
+    var clusterSize = CFG.nDistractors + 1;
+    var clusterTop  = cy - (clusterSize - 1) * spacingPx / 2;
+
+    for (var i = 0; i < clusterSize; i++) {
+      var yPos = clusterTop + i * spacingPx;
+      var letter = (i === targetPos) ? trial.target_letter : 'O';
+      MFA.drawLetter(ctx, letter, targetX, yPos, letterSizePx);
+    }
+  }
+}
+
+// ── Build trial timeline nodes ───────────────────────────────
+
+function buildTrialNodes(trialList, withFeedback) {
+  var nodes = [];
+  var canvasSize = function () { return [window.innerHeight, window.innerWidth]; };
+
+  for (var t = 0; t < trialList.length; t++) {
+    (function (trial) {
+
+      // ── Catch trial (attention check) ──
+      if (trial.is_catch) {
+        var catchKey = (trial.target_letter === 'T') ? CFG.keyT : CFG.keyL;
+        nodes.push({
+          type: jsPsychCanvasKeyboardResponse,
+          canvas_size: canvasSize,
+          stimulus: function (c) {
+            var ctx = c.getContext('2d');
+            MFA.clearCanvas(ctx, c.width, c.height, CFG.bgColor);
+            MFA.drawFixation(ctx, c.width / 2, c.height / 2, CFG.fixSizePx);
+          },
+          choices: 'NO_KEYS',
+          trial_duration: 500,
+          data: { phase: 'catch_fixation' }
+        });
+        nodes.push({
+          type: jsPsychCanvasKeyboardResponse,
+          canvas_size: canvasSize,
+          stimulus: function (c) {
+            var ctx = c.getContext('2d');
+            var cx = c.width / 2, cy = c.height / 2;
+            MFA.clearCanvas(ctx, c.width, c.height, CFG.bgColor);
+            ctx.font = 'bold 60px Courier New, monospace';
+            ctx.fillStyle = '#44ff44';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(trial.target_letter, cx, cy);
+          },
+          choices: [CFG.keyT, CFG.keyL],
+          trial_duration: CFG.maxRT,
+          data: {
+            phase: 'response', task: 'catch',
+            target_letter: trial.target_letter,
+            correct_key: catchKey, is_catch: true, is_practice: false
+          },
+          on_finish: function (data) {
+            data.correct = (data.response === data.correct_key);
+            data.timed_out = (data.response === null);
+          }
+        });
+        return;
+      }
+
+      // ── Normal trial ──
+      // Fixation
+      nodes.push({
+        type: jsPsychCanvasKeyboardResponse,
+        canvas_size: canvasSize,
+        stimulus: function (c) { drawPhase(c, 'fixation', trial); },
+        choices: 'NO_KEYS',
+        trial_duration: CFG.fixDur,
+        data: { phase: 'fixation' }
+      });
+
+      // Cue
+      nodes.push({
+        type: jsPsychCanvasKeyboardResponse,
+        canvas_size: canvasSize,
+        stimulus: function (c) { drawPhase(c, 'cue', trial); },
+        choices: 'NO_KEYS',
+        trial_duration: CFG.cueDur,
+        data: { phase: 'cue' }
+      });
+
+      // ISI
+      nodes.push({
+        type: jsPsychCanvasKeyboardResponse,
+        canvas_size: canvasSize,
+        stimulus: function (c) { drawPhase(c, 'fixation', trial); },
+        choices: 'NO_KEYS',
+        trial_duration: CFG.isiDur,
+        data: { phase: 'isi' }
+      });
+
+      // Target + response
+      var correctKey = (trial.target_letter === 'T') ? CFG.keyT : CFG.keyL;
+      nodes.push({
+        type: jsPsychCanvasKeyboardResponse,
+        canvas_size: canvasSize,
+        stimulus: function (c) { drawPhase(c, 'target', trial); },
+        choices: [CFG.keyT, CFG.keyL],
+        trial_duration: CFG.maxRT,
+        data: {
+          phase:              'response',
+          task:               'gradient',
+          cue_eccentricity:   trial.cue_eccentricity,
+          target_eccentricity: trial.target_eccentricity,
+          cue_side:           trial.cue_side,
+          target_side:        trial.target_side,
+          validity:           trial.validity,
+          target_letter:      trial.target_letter,
+          target_position:    trial.target_position,
+          correct_key:        correctKey,
+          is_practice:        trial.is_practice,
+          is_catch:           false
+        },
+        on_finish: function (data) {
+          data.correct = (data.response === data.correct_key);
+          data.timed_out = (data.response === null);
+        }
+      });
+
+      // Feedback (practice only)
+      if (withFeedback) {
+        nodes.push({
+          type: jsPsychHtmlKeyboardResponse,
+          stimulus: function () {
+            var last = jsPsych.data.get().last(1).values()[0];
+            if (last.timed_out) {
+              return '<p style="font-size:28px; color:#f44;">Too slow!</p>';
+            }
+            return last.correct
+              ? '<p style="font-size:28px; color:#4f4;">Correct ✓</p>'
+              : '<p style="font-size:28px; color:#f44;">Incorrect ✗</p>';
+          },
+          choices: 'NO_KEYS',
+          trial_duration: 600
+        });
+      }
+
+      // ITI
+      nodes.push({
+        type: jsPsychHtmlKeyboardResponse,
+        stimulus: '',
+        choices: 'NO_KEYS',
+        trial_duration: MFA.randInt(CFG.itiMin, CFG.itiMax)
+      });
+    })(trialList[t]);
+  }
+  return nodes;
+}
+
+// ── 5. Practice block ────────────────────────────────────────
+
+var practiceTrials = generateTrials(1, true).slice(0, CFG.practiceTrials);
+var practiceNodes  = buildTrialNodes(practiceTrials, true);
+
+timeline.push({
+  type: jsPsychHtmlKeyboardResponse,
+  stimulus: '<div ' + MFA.instructionStyle + '>' +
+    '<h2>Practice Block</h2>' +
+    '<p>You will now do <strong>' + CFG.practiceTrials + ' practice trials</strong> with feedback.</p>' +
+    MFA.keyReminder +
+    '<p style="color:#aaa; margin-top:20px;">Press any key to start.</p></div>',
+  choices: 'ALL_KEYS'
+});
+
+for (var p = 0; p < practiceNodes.length; p++) {
+  timeline.push(practiceNodes[p]);
+}
+
+// ── 6. Main experiment blocks ────────────────────────────────
+
+// 8 eccentricities × 2 sides × 40 reps per cell = 640 trials
+var mainTrials = generateTrials(CFG.trialsPerCell, false);
+mainTrials = MFA.insertCatchTrials(mainTrials, 40);
+
+var nBlocks = Math.ceil(mainTrials.length / CFG.trialsPerBlock);
+
+timeline.push({
+  type: jsPsychHtmlKeyboardResponse,
+  stimulus: '<div ' + MFA.instructionStyle + '>' +
+    '<h2>Main Experiment</h2>' +
+    '<p>Practice is over. The main experiment has <strong>' +
+    mainTrials.length + ' trials</strong> in <strong>' +
+    nBlocks + ' blocks</strong>.</p>' +
+    '<p>You will get a break between each block.</p>' +
+    MFA.keyReminder +
+    '<p style="color:#aaa; margin-top:20px;">Press any key when you are ready.</p></div>',
+  choices: 'ALL_KEYS'
+});
+
+for (var b = 0; b < nBlocks; b++) {
+  var blockStart = b * CFG.trialsPerBlock;
+  var blockEnd   = Math.min(blockStart + CFG.trialsPerBlock, mainTrials.length);
+  var blockTrials = mainTrials.slice(blockStart, blockEnd);
+  var blockNodes  = buildTrialNodes(blockTrials, false);
+
+  for (var bn = 0; bn < blockNodes.length; bn++) {
+    timeline.push(blockNodes[bn]);
+  }
+
+  // Break screen between blocks (except after last block)
+  if (b < nBlocks - 1) {
+    (function (blockNum, totalBlocks, trialsSoFar) {
+      timeline.push({
+        type: jsPsychHtmlKeyboardResponse,
+        stimulus: function () {
+          var responses = jsPsych.data.get().filter({ phase: 'response', is_practice: false });
+          var correct   = responses.filter({ correct: true });
+          var accuracy  = responses.count() > 0
+            ? Math.round(100 * correct.count() / responses.count())
+            : 0;
+          return '<div ' + MFA.instructionStyle + '>' +
+            '<h2>Break</h2>' +
+            '<p>Block ' + (blockNum + 1) + ' of ' + totalBlocks + ' complete.</p>' +
+            '<p>Your accuracy so far: <strong>' + accuracy + '%</strong></p>' +
+            '<p>Take a short rest. When you are ready, press any key to continue.</p>' +
+            MFA.keyReminder +
+          '</div>';
+        },
+        choices: 'ALL_KEYS'
+      });
+    })(b, nBlocks, blockEnd);
+  }
+}
+
+// ── 7. Debrief ───────────────────────────────────────────────
+
+timeline.push({
+  type: jsPsychHtmlKeyboardResponse,
+  stimulus: function () {
+    var responses = jsPsych.data.get().filter({ phase: 'response', is_practice: false });
+    var correct   = responses.filter({ correct: true });
+    var accuracy  = responses.count() > 0
+      ? Math.round(100 * correct.count() / responses.count())
+      : 0;
+    var meanRT    = Math.round(correct.select('rt').mean());
+
+    return '<div ' + MFA.instructionStyle + '>' +
+      '<h2>Experiment Complete!</h2>' +
+      '<p>Thank you for participating.</p>' +
+      '<p>Your overall accuracy: <strong>' + accuracy + '%</strong></p>' +
+      '<p>Your average response time: <strong>' + meanRT + ' ms</strong></p>' +
+      '<p style="color:#aaa; margin-top:30px;">Your data will be downloaded automatically.<br>' +
+      'Press any key to finish.</p></div>';
+  },
+  choices: 'ALL_KEYS'
+});
+
+// ── 8. Exit fullscreen ──────────────────────────────────────
+
+timeline.push({
+  type: jsPsychFullscreen,
+  fullscreen_mode: false
+});
+
+// ── Run ──────────────────────────────────────────────────────
+jsPsych.run(timeline);
+
+</script>
+</body>
+</html>

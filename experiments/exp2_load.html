@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MFA Experiment 2 — Load-Distractor Function</title>
+
+  <!-- jsPsych 7.3.4 -->
+  <script src="https://unpkg.com/jspsych@7.3.4"></script>
+  <link  href="https://unpkg.com/jspsych@7.3.4/css/jspsych.css" rel="stylesheet">
+
+  <!-- Plugins -->
+  <script src="https://unpkg.com/@jspsych/plugin-html-keyboard-response@1.1.3"></script>
+  <script src="https://unpkg.com/@jspsych/plugin-canvas-keyboard-response@1.1.3"></script>
+  <script src="https://unpkg.com/@jspsych/plugin-fullscreen@1.2.1"></script>
+  <script src="https://unpkg.com/@jspsych/plugin-call-function@1.1.3"></script>
+  <script src="https://unpkg.com/@jspsych/plugin-instructions@1.1.4"></script>
+  <script src="https://unpkg.com/@jspsych/plugin-survey-text@1.1.3"></script>
+
+  <script src="utils.js"></script>
+  <style> body { background: #333; margin: 0; overflow: hidden; } </style>
+</head>
+<body>
+<script>
+/*  ══════════════════════════════════════════════════════════════
+    EXPERIMENT 2 — Continuous vs Binary Load–Distractor Function
+    Tests MFA Prediction 2: Sigmoid transition, not binary step.
+
+    Paradigm:  Modified Lavie flanker task
+    Design:    8 load levels × 3 congruency × 2 distractor distance
+               20 reps per cell  →  960 trials (~45 min, 2 sessions)
+    ══════════════════════════════════════════════════════════════ */
+
+var CFG = {
+  // Load = set size (number of items in central search array)
+  loadLevels:  [1, 2, 3, 4, 5, 6, 7, 8],
+  congruency:  ['congruent', 'incongruent', 'neutral'],
+  distDist:    ['near', 'far'],          // 2° vs 8°
+  nearDeg:     2,
+  farDeg:      8,
+  repsPerCell: 20,
+
+  // Central search array arranged on a circle of this radius
+  arrayRadiusDeg: 1.5,
+  letterSizeDeg:  0.7,
+  distractorLetters: ['H', 'K', 'M', 'Z', 'W', 'V'],
+  targetLetters:     ['X', 'N'],
+
+  // Timing
+  fixDur:   500,
+  maxRT:    2500,
+  itiMin:   800,
+  itiMax:   1200,
+
+  // Keys
+  keyX: 'x',
+  keyN: 'n',
+
+  // Practice
+  practiceTrials: 24,
+
+  // Blocks (split into 2 sessions of ~480 trials)
+  trialsPerBlock: 96,
+
+  bgColor: '#333333'
+};
+
+var jsPsych = initJsPsych({
+  on_finish: function () {
+    MFA.saveData(jsPsych, 'exp2_load_' + Date.now() + '.csv');
+  }
+});
+
+var timeline = [];
+
+// ── Fullscreen ───────────────────────────────────────────────
+timeline.push({
+  type: jsPsychFullscreen,
+  fullscreen_mode: true,
+  message: '<div style="color:#fff; text-align:center; font-size:20px; margin:40px;">' +
+    '<h2>MFA Experiment 2: Load–Distractor Function</h2>' +
+    '<p>This experiment takes approximately <strong>45 minutes</strong> (split into 2 halves).</p>' +
+    '<p>Click below to enter fullscreen.</p></div>'
+});
+
+// ── Participant ID ───────────────────────────────────────────
+timeline.push(MFA.buildParticipantIdTrial(jsPsych));
+
+// ── Screen info ──────────────────────────────────────────────
+timeline.push({
+  type: jsPsychCallFunction,
+  func: function () {
+    var info = MFA.getScreenInfo();
+    jsPsych.data.addProperties({
+      screen_width: info.windowWidth,
+      screen_height: info.windowHeight,
+      device_pixel_ratio: info.devicePixelRatio
+    });
+  }
+});
+
+// ── Calibration ──────────────────────────────────────────────
+timeline.push(MFA.buildCalibrationTrial(jsPsych));
+
+// ── Instructions ─────────────────────────────────────────────
+var keyReminder2 = '<p style="color:#aaa; font-size:14px; margin-top:30px;">' +
+  'Press <strong>X</strong> if target is X &nbsp;|&nbsp; ' +
+  'Press <strong>N</strong> if target is N</p>';
+
+timeline.push({
+  type: jsPsychInstructions,
+  pages: [
+    '<div ' + MFA.instructionStyle + '>' +
+      '<h2>Task Instructions</h2>' +
+      '<p>In this experiment, you will search for a <strong>target letter</strong> ' +
+      'among other letters arranged in a circle at the center of the screen.</p>' +
+      '<p>The target is always either <strong style="font-size:28px; color:#4af;">X</strong> or ' +
+      '<strong style="font-size:28px; color:#4af;">N</strong>.</p>' +
+      '<p>The other letters in the circle are neutral distractors (H, K, M, Z, W, V).</p>' +
+      keyReminder2 +
+    '</div>',
+
+    '<div ' + MFA.instructionStyle + '>' +
+      '<h2>Ignore the Peripheral Letter!</h2>' +
+      '<p>On each trial, a <strong style="color:#f88;">peripheral letter</strong> will also appear ' +
+      'to the left or right of the circle.</p>' +
+      '<p>This peripheral letter can be:</p>' +
+      '<ul style="text-align:left; max-width:500px; margin:auto;">' +
+        '<li><strong>Congruent</strong> — same as the target (e.g., X when target is X)</li>' +
+        '<li><strong>Incongruent</strong> — the other target letter (e.g., N when target is X)</li>' +
+        '<li><strong>Neutral</strong> — a non-target letter (e.g., P)</li>' +
+      '</ul>' +
+      '<p>You must <strong>ignore</strong> it and focus on the central circle.</p>' +
+    '</div>',
+
+    '<div ' + MFA.instructionStyle + '>' +
+      '<h2>Set Size Varies</h2>' +
+      '<p>The number of letters in the central circle varies from <strong>1 to 8</strong>.</p>' +
+      '<p>Sometimes there will be only the target; other times it will be ' +
+      'among several other letters.</p>' +
+      '<p>Always respond as <strong>quickly</strong> and <strong>accurately</strong> as possible.</p>' +
+      '<p>We start with a short <strong>practice block</strong>.</p>' +
+      keyReminder2 +
+    '</div>'
+  ],
+  show_clickable_nav: true,
+  button_label_previous: 'Back',
+  button_label_next: 'Next'
+});
+
+// ── Trial generation ─────────────────────────────────────────
+
+function generateLoadTrials(repsPerCell, isPractice) {
+  var allPositions = [0, 1, 2, 3, 4, 5, 6, 7];
+  var trials = [];
+  for (var li = 0; li < CFG.loadLevels.length; li++) {
+    for (var ci = 0; ci < CFG.congruency.length; ci++) {
+      for (var di = 0; di < CFG.distDist.length; di++) {
+        for (var r = 0; r < repsPerCell; r++) {
+          var load = CFG.loadLevels[li];
+          var target = MFA.randChoice(CFG.targetLetters);
+          var other  = (target === 'X') ? 'N' : 'X';
+          var cong   = CFG.congruency[ci];
+          var periph;
+          if (cong === 'congruent')        periph = target;
+          else if (cong === 'incongruent') periph = other;
+          else                             periph = 'P';
+
+          var filled = MFA.shuffle(allPositions.slice()).slice(0, load);
+          var targetArrayIdx = filled[MFA.randInt(0, filled.length - 1)];
+          var neutralPool = MFA.shuffle(CFG.distractorLetters.slice());
+
+          trials.push({
+            load:                load,
+            congruency:          cong,
+            distractor_distance: CFG.distDist[di],
+            target_letter:       target,
+            peripheral_letter:   periph,
+            peripheral_side:     MFA.randChoice(['left', 'right']),
+            filled_indices:      filled,
+            target_array_idx:    targetArrayIdx,
+            neutral_letters:     neutralPool,
+            is_practice:         !!isPractice
+          });
+        }
+      }
+    }
+  }
+  return MFA.shuffle(trials);
+}
+
+// ── Stimulus drawing ─────────────────────────────────────────
+
+function drawLoadTrial(c, trial) {
+  var ctx = c.getContext('2d');
+  var cx  = c.width / 2;
+  var cy  = c.height / 2;
+  MFA.clearCanvas(ctx, c.width, c.height, CFG.bgColor);
+  MFA.drawFixation(ctx, cx, cy, 16, '#888');
+
+  var letterPx  = MFA.degToPx(CFG.letterSizeDeg);
+  var radiusPx  = MFA.degToPx(CFG.arrayRadiusDeg);
+
+  var nPositions = 8;
+  var positions  = [];
+  for (var i = 0; i < nPositions; i++) {
+    var angle = (2 * Math.PI * i / nPositions) - Math.PI / 2;
+    positions.push({
+      x: cx + radiusPx * Math.cos(angle),
+      y: cy + radiusPx * Math.sin(angle)
+    });
+  }
+
+  var poolIdx = 0;
+  for (var fi = 0; fi < trial.filled_indices.length; fi++) {
+    var idx = trial.filled_indices[fi];
+    var pos = positions[idx];
+    var letter;
+    if (idx === trial.target_array_idx) {
+      letter = trial.target_letter;
+    } else {
+      letter = trial.neutral_letters[poolIdx % trial.neutral_letters.length];
+      poolIdx++;
+    }
+    MFA.drawLetter(ctx, letter, pos.x, pos.y, letterPx);
+  }
+
+  for (var i = 0; i < nPositions; i++) {
+    if (trial.filled_indices.indexOf(i) === -1) {
+      ctx.fillStyle = '#555';
+      ctx.beginPath();
+      ctx.arc(positions[i].x, positions[i].y, 3, 0, 2 * Math.PI);
+      ctx.fill();
+    }
+  }
+
+  // Peripheral distractor: distance measured from array edge
+  // Effective eccentricity from fixation = arrayRadius + distance
+  var distDeg = (trial.distractor_distance === 'near') ? CFG.nearDeg : CFG.farDeg;
+  var distPx  = MFA.degToPx(distDeg);
+  var sign    = (trial.peripheral_side === 'left') ? -1 : 1;
+  var periphX = cx + sign * (radiusPx + distPx);
+  MFA.drawLetter(ctx, trial.peripheral_letter, periphX, cy, letterPx, '#ff8888');
+}
+
+// ── Build trial nodes ────────────────────────────────────────
+
+function buildLoadTrialNodes(trialList, withFeedback) {
+  var nodes = [];
+  var canvasSize = function () { return [window.innerHeight, window.innerWidth]; };
+
+  for (var t = 0; t < trialList.length; t++) {
+    (function (trial) {
+
+      // ── Catch trial ──
+      if (trial.is_catch) {
+        var catchKey = (trial.target_letter === 'X') ? CFG.keyX : CFG.keyN;
+        nodes.push({
+          type: jsPsychCanvasKeyboardResponse,
+          canvas_size: canvasSize,
+          stimulus: function (c) {
+            var ctx = c.getContext('2d');
+            MFA.clearCanvas(ctx, c.width, c.height, CFG.bgColor);
+            MFA.drawFixation(ctx, c.width / 2, c.height / 2, 20);
+          },
+          choices: 'NO_KEYS',
+          trial_duration: 500,
+          data: { phase: 'catch_fixation' }
+        });
+        nodes.push({
+          type: jsPsychCanvasKeyboardResponse,
+          canvas_size: canvasSize,
+          stimulus: function (c) {
+            var ctx = c.getContext('2d');
+            var cx = c.width / 2, cy = c.height / 2;
+            MFA.clearCanvas(ctx, c.width, c.height, CFG.bgColor);
+            ctx.font = 'bold 60px Courier New, monospace';
+            ctx.fillStyle = '#44ff44';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(trial.target_letter, cx, cy);
+          },
+          choices: [CFG.keyX, CFG.keyN],
+          trial_duration: CFG.maxRT,
+          data: {
+            phase: 'response', task: 'catch',
+            target_letter: trial.target_letter,
+            correct_key: catchKey, is_catch: true, is_practice: false
+          },
+          on_finish: function (data) {
+            data.correct = (data.response === data.correct_key);
+            data.timed_out = (data.response === null);
+          }
+        });
+        return;
+      }
+
+      // ── Normal trial ──
+      // Fixation
+      nodes.push({
+        type: jsPsychCanvasKeyboardResponse,
+        canvas_size: canvasSize,
+        stimulus: function (c) {
+          var ctx = c.getContext('2d');
+          MFA.clearCanvas(ctx, c.width, c.height, CFG.bgColor);
+          MFA.drawFixation(ctx, c.width / 2, c.height / 2, 20);
+        },
+        choices: 'NO_KEYS',
+        trial_duration: CFG.fixDur,
+        data: { phase: 'fixation' }
+      });
+
+      // Stimulus + response
+      var correctKey = (trial.target_letter === 'X') ? CFG.keyX : CFG.keyN;
+      nodes.push({
+        type: jsPsychCanvasKeyboardResponse,
+        canvas_size: canvasSize,
+        stimulus: function (c) { drawLoadTrial(c, trial); },
+        choices: [CFG.keyX, CFG.keyN],
+        trial_duration: CFG.maxRT,
+        data: {
+          phase:               'response',
+          task:                'load',
+          load:                trial.load,
+          congruency:          trial.congruency,
+          distractor_distance: trial.distractor_distance,
+          target_letter:       trial.target_letter,
+          peripheral_letter:   trial.peripheral_letter,
+          peripheral_side:     trial.peripheral_side,
+          correct_key:         correctKey,
+          is_practice:         trial.is_practice,
+          is_catch:            false
+        },
+        on_finish: function (data) {
+          data.correct   = (data.response === data.correct_key);
+          data.timed_out = (data.response === null);
+        }
+      });
+
+      // Feedback (practice)
+      if (withFeedback) {
+        nodes.push({
+          type: jsPsychHtmlKeyboardResponse,
+          stimulus: function () {
+            var last = jsPsych.data.get().last(1).values()[0];
+            if (last.timed_out) return '<p style="font-size:28px; color:#f44;">Too slow!</p>';
+            return last.correct
+              ? '<p style="font-size:28px; color:#4f4;">Correct ✓</p>'
+              : '<p style="font-size:28px; color:#f44;">Incorrect ✗</p>';
+          },
+          choices: 'NO_KEYS',
+          trial_duration: 500
+        });
+      }
+
+      // ITI
+      nodes.push({
+        type: jsPsychHtmlKeyboardResponse,
+        stimulus: '',
+        choices: 'NO_KEYS',
+        trial_duration: MFA.randInt(CFG.itiMin, CFG.itiMax)
+      });
+    })(trialList[t]);
+  }
+  return nodes;
+}
+
+// ── Practice ─────────────────────────────────────────────────
+var practiceTrials = generateLoadTrials(1, true).slice(0, CFG.practiceTrials);
+var practiceNodes  = buildLoadTrialNodes(practiceTrials, true);
+
+timeline.push({
+  type: jsPsychHtmlKeyboardResponse,
+  stimulus: '<div ' + MFA.instructionStyle + '>' +
+    '<h2>Practice Block</h2>' +
+    '<p><strong>' + CFG.practiceTrials + '</strong> practice trials with feedback.</p>' +
+    keyReminder2 +
+    '<p style="color:#aaa; margin-top:20px;">Press any key to start.</p></div>',
+  choices: 'ALL_KEYS'
+});
+for (var p = 0; p < practiceNodes.length; p++) timeline.push(practiceNodes[p]);
+
+// ── Main experiment ──────────────────────────────────────────
+var mainTrials = generateLoadTrials(CFG.repsPerCell, false);
+// 8 loads × 3 congruency × 2 distance × 20 reps = 960 trials
+mainTrials = MFA.insertCatchTrials(mainTrials, 48, ['X', 'N']);
+var nBlocks = Math.ceil(mainTrials.length / CFG.trialsPerBlock);
+
+timeline.push({
+  type: jsPsychHtmlKeyboardResponse,
+  stimulus: '<div ' + MFA.instructionStyle + '>' +
+    '<h2>Main Experiment</h2>' +
+    '<p><strong>' + mainTrials.length + '</strong> trials in <strong>' +
+    nBlocks + '</strong> blocks.</p>' +
+    '<p>Breaks provided between blocks.</p>' +
+    keyReminder2 +
+    '<p style="color:#aaa; margin-top:20px;">Press any key when ready.</p></div>',
+  choices: 'ALL_KEYS'
+});
+
+for (var b = 0; b < nBlocks; b++) {
+  var start = b * CFG.trialsPerBlock;
+  var end   = Math.min(start + CFG.trialsPerBlock, mainTrials.length);
+  var block = mainTrials.slice(start, end);
+  var nodes = buildLoadTrialNodes(block, false);
+  for (var i = 0; i < nodes.length; i++) timeline.push(nodes[i]);
+
+  if (b < nBlocks - 1) {
+    (function (bNum, total) {
+      timeline.push({
+        type: jsPsychHtmlKeyboardResponse,
+        stimulus: function () {
+          var resp = jsPsych.data.get().filter({ phase: 'response', is_practice: false });
+          var acc  = resp.count() > 0
+            ? Math.round(100 * resp.filter({ correct: true }).count() / resp.count()) : 0;
+          var half = (bNum === Math.floor(total / 2) - 1)
+            ? '<p style="color:#ffdd00; font-size:20px;">🎉 Halfway done! Great job!</p>' : '';
+          return '<div ' + MFA.instructionStyle + '>' +
+            '<h2>Break</h2>' +
+            '<p>Block ' + (bNum + 1) + ' / ' + total + '</p>' +
+            '<p>Accuracy: <strong>' + acc + '%</strong></p>' +
+            half +
+            '<p>Rest as long as you need, then press any key.</p></div>';
+        },
+        choices: 'ALL_KEYS'
+      });
+    })(b, nBlocks);
+  }
+}
+
+// ── Debrief ──────────────────────────────────────────────────
+timeline.push({
+  type: jsPsychHtmlKeyboardResponse,
+  stimulus: function () {
+    var resp = jsPsych.data.get().filter({ phase: 'response', is_practice: false });
+    var acc  = resp.count() > 0
+      ? Math.round(100 * resp.filter({ correct: true }).count() / resp.count()) : 0;
+    var rt   = Math.round(resp.filter({ correct: true }).select('rt').mean());
+    return '<div ' + MFA.instructionStyle + '>' +
+      '<h2>Experiment Complete!</h2>' +
+      '<p>Accuracy: <strong>' + acc + '%</strong></p>' +
+      '<p>Mean RT: <strong>' + rt + ' ms</strong></p>' +
+      '<p style="color:#aaa; margin-top:30px;">Data downloading…<br>Press any key to finish.</p></div>';
+  },
+  choices: 'ALL_KEYS'
+});
+
+timeline.push({ type: jsPsychFullscreen, fullscreen_mode: false });
+
+jsPsych.run(timeline);
+</script>
+</body>
+</html>
