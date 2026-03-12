@@ -194,6 +194,122 @@ const MFA = {
     };
   },
 
+  // ── Informed consent trial ───────────────────────────────────
+
+  buildConsentTrial(jsPsych, studyTitle, duration, contact) {
+    studyTitle = studyTitle || 'MFA Attention Study';
+    duration   = duration   || '30-45 minutes';
+    contact    = contact    || 'cora.zeng@example.com';
+
+    return {
+      type: jsPsychHtmlKeyboardResponse,
+      stimulus:
+        '<div style="text-align:left; color:#fff; max-width:700px; margin:auto; ' +
+        'font-size:16px; line-height:1.8; padding:20px;">' +
+        '<h2 style="text-align:center;">Informed Consent</h2>' +
+        '<p><strong>Study:</strong> ' + studyTitle + '</p>' +
+        '<p><strong>Duration:</strong> Approximately ' + duration + '</p>' +
+        '<hr style="border-color:#555;">' +
+        '<p><strong>Purpose:</strong> This study investigates how attention is ' +
+        'distributed across visual space. You will complete a computer-based task ' +
+        'involving identifying letters on the screen.</p>' +
+        '<p><strong>Procedure:</strong> You will see brief visual displays and respond ' +
+        'using keyboard keys. The task is not stressful, but it does require sustained ' +
+        'concentration.</p>' +
+        '<p><strong>Risks:</strong> There are no anticipated risks beyond those encountered ' +
+        'in everyday computer use. You may experience mild eye fatigue from extended screen use.</p>' +
+        '<p><strong>Benefits:</strong> Your participation contributes to scientific understanding ' +
+        'of human attention. You will receive compensation as described in the study listing.</p>' +
+        '<p><strong>Confidentiality:</strong> Your data will be stored anonymously using a ' +
+        'participant ID. No personally identifying information is collected.</p>' +
+        '<p><strong>Voluntary participation:</strong> You may withdraw at any time by closing ' +
+        'the browser window, without penalty.</p>' +
+        '<p><strong>Contact:</strong> For questions, contact <em>' + contact + '</em></p>' +
+        '<hr style="border-color:#555;">' +
+        '<p style="text-align:center; color:#aaa;">By pressing <strong>any key</strong>, ' +
+        'you confirm that you have read and understood this information, ' +
+        'and you consent to participate.</p>' +
+        '</div>',
+      choices: 'ALL_KEYS',
+      data: { phase: 'consent', consented: true }
+    };
+  },
+
+  // ── Data quality warnings (in break screens) ──────────────
+
+  getQualityMetrics(jsPsych) {
+    var resp = jsPsych.data.get().filter({ phase: 'response', is_practice: false, is_catch: false });
+    if (resp.count() === 0) return null;
+
+    var correct = resp.filter({ correct: true });
+    var accuracy = correct.count() / resp.count();
+    var meanRT   = correct.count() > 0 ? correct.select('rt').mean() : 0;
+
+    var rts = correct.count() > 0 ? correct.select('rt').values : [];
+    var fastCount = 0;
+    for (var i = 0; i < rts.length; i++) {
+      if (rts[i] < 200) fastCount++;
+    }
+    var fastProp = rts.length > 0 ? fastCount / rts.length : 0;
+
+    var timedOut = resp.filter({ timed_out: true });
+    var timeoutProp = timedOut.count() / resp.count();
+
+    return {
+      accuracy: accuracy,
+      meanRT: meanRT,
+      fastProp: fastProp,
+      timeoutProp: timeoutProp,
+      totalTrials: resp.count()
+    };
+  },
+
+  qualityWarningHtml(jsPsych) {
+    var m = this.getQualityMetrics(jsPsych);
+    if (!m) return '';
+
+    var warnings = [];
+    if (m.accuracy < 0.60) {
+      warnings.push('<span style="color:#ff6666;">⚠ Your accuracy is below 60%. ' +
+        'Please try to respond more carefully.</span>');
+    }
+    if (m.fastProp > 0.10) {
+      warnings.push('<span style="color:#ff6666;">⚠ Many responses are very fast (&lt;200ms). ' +
+        'Please make sure you are looking at the screen before responding.</span>');
+    }
+    if (m.timeoutProp > 0.15) {
+      warnings.push('<span style="color:#ffaa44;">⚠ You are missing some trials. ' +
+        'Try to respond a bit faster.</span>');
+    }
+
+    if (warnings.length === 0) return '';
+    return '<div style="margin-top:15px; padding:10px; border:1px solid #ff6666; ' +
+      'border-radius:8px; max-width:500px; margin-left:auto; margin-right:auto;">' +
+      warnings.join('<br>') + '</div>';
+  },
+
+  // ── Browser compatibility check ────────────────────────────
+
+  buildBrowserCheck(jsPsych) {
+    return {
+      type: jsPsychCallFunction,
+      func: function () {
+        var info = MFA.getScreenInfo();
+        var issues = [];
+        if (info.windowWidth < 1024 || info.windowHeight < 600) {
+          issues.push('Screen too small (min 1024×600)');
+        }
+        if (/Mobi|Android/i.test(navigator.userAgent)) {
+          issues.push('Mobile device detected — desktop required');
+        }
+        jsPsych.data.addProperties({
+          browser: navigator.userAgent,
+          browser_issues: issues.length > 0 ? issues.join('; ') : 'none'
+        });
+      }
+    };
+  },
+
   // ── URL parameter parsing (for Prolific / JATOS / Qualtrics) ────
 
   getUrlParam(name) {

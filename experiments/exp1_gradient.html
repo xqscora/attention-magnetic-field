@@ -88,8 +88,16 @@ timeline.push({
     '<p>Click the button below to enter fullscreen and begin.</p></div>'
 });
 
-// ── 1b. Participant ID ──────────────────────────────────────
+// ── 1b. Consent ─────────────────────────────────────────────
+timeline.push(MFA.buildConsentTrial(jsPsych,
+  'Magnetic Field of Attention — Experiment 1: Attentional Gradient',
+  '35 minutes'));
+
+// ── 1c. Participant ID ──────────────────────────────────────
 timeline.push(MFA.buildParticipantIdTrial(jsPsych));
+
+// ── 1d. Browser check ───────────────────────────────────────
+timeline.push(MFA.buildBrowserCheck(jsPsych));
 
 // ── 2. Screen size check ─────────────────────────────────────
 timeline.push({
@@ -428,6 +436,7 @@ for (var b = 0; b < nBlocks; b++) {
             '<h2>Break</h2>' +
             '<p>Block ' + (blockNum + 1) + ' of ' + totalBlocks + ' complete.</p>' +
             '<p>Your accuracy so far: <strong>' + accuracy + '%</strong></p>' +
+            MFA.qualityWarningHtml(jsPsych) +
             '<p>Take a short rest. When you are ready, press any key to continue.</p>' +
             MFA.keyReminder +
           '</div>';

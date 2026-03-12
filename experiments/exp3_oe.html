@@ -165,8 +165,16 @@ timeline.push({
     '<p>Click below to enter fullscreen.</p></div>'
 });
 
+// ── Consent ──────────────────────────────────────────────────
+timeline.push(MFA.buildConsentTrial(jsPsych,
+  'Magnetic Field of Attention — Experiment 3: Individual Differences',
+  '45 minutes'));
+
 // ── Participant ID ───────────────────────────────────────────
 timeline.push(MFA.buildParticipantIdTrial(jsPsych));
+
+// ── Browser check ────────────────────────────────────────────
+timeline.push(MFA.buildBrowserCheck(jsPsych));
 
 // ── Screen info ──────────────────────────────────────────────
 timeline.push({
@@ -629,6 +637,7 @@ for (var b = 0; b < nBlocks; b++) {
             '<h2>Break</h2>' +
             '<p>Block ' + (bNum + 1) + ' / ' + total + '</p>' +
             '<p>Accuracy: <strong>' + acc + '%</strong></p>' +
+            MFA.qualityWarningHtml(jsPsych) +
             '<p>Rest as long as you need, then press any key.</p></div>';
         },
         choices: 'ALL_KEYS'
