@@ -95,6 +95,12 @@ python -m unittest discover -s saliency/tests -v
 pip install -r requirements.txt
 ```
 
+## License
+
+The source code uses [GNU GPL v3.0](../LICENSE), as specified by the repository
+license. Commercial use is permitted subject to its terms; redistribution of
+covered software must comply with the GPL's corresponding-source requirements.
+
 ## References
 
 - Hubel, D.H. & Wiesel, T.N. (1962). Receptive fields, binocular interaction and functional architecture in the cat's visual cortex. *Journal of Physiology*.

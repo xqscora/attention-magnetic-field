@@ -126,7 +126,12 @@ Main figures (Fig 1-6) and supplementary simulation screenshots (Fig S1-S4) are 
 
 ## License
 
-This work is licensed under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/).
+The source code in this repository is licensed under the
+[GNU General Public License v3.0](LICENSE).
+
+Separately published research materials, including Zenodo records, and
+third-party dependencies retain their own license terms. This notice does not
+change the licenses attached to those materials.
 
 ## Contact
 
