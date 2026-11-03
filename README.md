@@ -36,8 +36,14 @@ Pre-registration: [OSF -- Empirical Tests of the MFA](https://osf.io)
 ├── analysis/        # Python scripts for data reanalysis (AIC, gradient, load)
 ├── experiments/     # jsPsych 7.3.4 behavioral experiments (3 studies)
 ├── figures/         # Main figures (Fig 1-6) and supplementary (Fig S1-S4)
+├── saliency/        # Handcrafted fixation-prediction model and benchmark results
 └── simulation/      # Unity interactive simulation (4 scenes)
 ```
+
+For the image-based model, see the [saliency implementation and usage](saliency/README.md)
+and [official benchmark results](saliency/BENCHMARK_RESULTS.md). It predicts human
+fixation locations using handcrafted features and an explicitly configured
+center prior; it does not train a deep network.
 
 ## Experiments
 

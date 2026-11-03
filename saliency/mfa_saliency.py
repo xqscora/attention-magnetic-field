@@ -15,13 +15,13 @@ Improvements over v1, each grounded in established neuroscience:
    - Human fixations have spatial uncertainty (~1 degree visual angle)
    - A small Gaussian blur on the output models this foveal spread
 
-4. Multi-scale MFA kernel
-   - Attention effects operate across spatial scales (Eriksen & St. James, 1986)
-   - MFA field applied at 3 scales, capturing both local and global attention
+4. Multi-scale center-surround features
+   - Intensity and color contrast are extracted at 3 scales
+   - One MFA kernel is applied to the resulting feature maps
 
 Usage:
-    python mfa_saliency_v2.py --dataset images/ --output_dir results/
-    python mfa_saliency_v2.py --dataset images/ --fixations fixmaps/ --output_dir results/
+    python mfa_saliency.py --dataset images/ --output_dir results/
+    python mfa_saliency.py --dataset images/ --fixations fixmaps/ --output_dir results/
 """
 
 import numpy as np
@@ -321,6 +321,7 @@ def gaussian_saliency_v2(img_array, sigma=None, kernel_size=None,
 # ============================================================
 
 def compute_auc(saliency_map, fixation_map):
+    """Local sampled AUC; keep the historical seed, negatives and tie handling."""
     s = saliency_map.flatten()
     f = fixation_map.flatten()
     fix_idx = f > 0
@@ -331,8 +332,14 @@ def compute_auc(saliency_map, fixation_map):
     if len(neg) > 10000:
         rng = np.random.RandomState(42)
         neg = rng.choice(neg, 10000, replace=False)
-    auc = np.mean([np.mean(p > neg) + 0.5 * np.mean(p == neg) for p in pos])
-    return auc
+    # Count wins and half of ties without comparing every fixation with every
+    # negative pixel. This changes evaluation cost, not predictions or sampling.
+    neg = np.sort(neg)
+    left = np.searchsorted(neg, pos, side='left')
+    right = np.searchsorted(neg, pos, side='right')
+    scores = (left + right) * 0.5 / len(neg)
+    scores[np.isnan(pos)] = 0.0  # Match the original comparisons for NaN inputs.
+    return float(np.mean(scores))
 
 
 def compute_nss(saliency_map, fixation_map):
@@ -437,7 +444,8 @@ def process_dataset(stimuli_dir, output_dir, fixation_dir=None,
                     cb_weight=0.0, cb_sigma_frac=0.25,
                     output_blur_sigma=None):
     """Process dataset: generate saliency maps and evaluate if fixations available."""
-    os.makedirs(output_dir, exist_ok=True)
+    if max_images is not None and max_images <= 0:
+        raise ValueError('max_images must be positive when specified')
 
     extensions = {'.jpg', '.jpeg', '.png', '.bmp', '.tiff'}
     image_files = sorted([
@@ -449,6 +457,9 @@ def process_dataset(stimuli_dir, output_dir, fixation_dir=None,
         image_files = image_files[:max_images]
 
     n_images = len(image_files)
+    if n_images == 0:
+        raise ValueError(f'No supported images found in {stimuli_dir}')
+    os.makedirs(output_dir, exist_ok=True)
     print(f"{'='*70}")
     print(f"MFA SALIENCY MODEL v2 — DATASET EVALUATION")
     print(f"{'='*70}")
@@ -458,7 +469,7 @@ def process_dataset(stimuli_dir, output_dir, fixation_dir=None,
     print(f"Output:       {output_dir}")
     print(f"Alpha:        {alpha}")
     print(f"Center bias:  weight={cb_weight}, sigma_frac={cb_sigma_frac}")
-    print(f"Output blur:  {output_blur_sigma or 'auto'}")
+    print(f"Output blur:  {'auto' if output_blur_sigma is None else output_blur_sigma}")
     print(f"{'='*70}\n")
 
     mfa_metrics = {m: [] for m in ['AUC', 'NSS', 'CC', 'KL', 'SIM']}
@@ -551,6 +562,7 @@ def process_dataset(stimuli_dir, output_dir, fixation_dir=None,
                 'alpha': alpha,
                 'cb_weight': cb_weight,
                 'cb_sigma_frac': cb_sigma_frac,
+                'output_blur_sigma': output_blur_sigma,
             },
             'MFA_v2': {m: float(np.mean(v)) for m, v in mfa_metrics.items()},
             'Gaussian_v2': {m: float(np.mean(v)) for m, v in gauss_metrics.items()},
@@ -608,6 +620,6 @@ if __name__ == '__main__':
         )
     else:
         print("Usage:")
-        print("  Single:   python mfa_saliency_v2.py --input img.jpg")
-        print("  Dataset:  python mfa_saliency_v2.py --dataset imgs/ --fixations fixmaps/ --output_dir results/")
-        print("  MIT300:   python mfa_saliency_v2.py --dataset BenchmarkIMAGES/ --output_dir submit/ --cb_weight 0.3")
+        print("  Single:   python mfa_saliency.py --input img.jpg")
+        print("  Dataset:  python mfa_saliency.py --dataset imgs/ --fixations fixmaps/ --output_dir results/")
+        print("  MIT300:   python mfa_saliency.py --dataset BenchmarkIMAGES/ --output_dir submit/ --cb_weight 0.4 --cb_sigma_frac 0.1667 --output_blur 19")
