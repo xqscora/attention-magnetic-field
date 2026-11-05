@@ -54,7 +54,9 @@ python mfa_saliency.py --dataset BenchmarkIMAGES/ --output_dir submit/ --cb_weig
 
 ## MIT/Tübingen Saliency Benchmark
 
-This model has been evaluated on the [MIT/Tübingen Saliency Benchmark](https://saliency.tuebingen.ai/) (MIT300 dataset).
+This model has official entries on the
+[MIT/Tübingen Saliency Benchmark](https://saliency.tuebingen.ai/): the original
+MFA and MFA v2 on MIT300, and MFA v2 on CAT2000.
 
 See [benchmark results and version notes](BENCHMARK_RESULTS.md) for the original
 MFA and MFA v2 MIT300 results, and the separately evaluated CAT2000 submission.
@@ -62,8 +64,26 @@ The script in this directory implements the v2 pipeline; it should not be used
 to reproduce the original MFA entry without its original implementation.
 
 The MIT300 command above records the historical v2 run settings. The submitted
-archive has not been regenerated and checked pixel-for-pixel against this
-checkout. Local MIT1003 results and official hidden-test scores are distinct.
+MIT300 archive (`MFA_v2_clean.zip`, SHA-256
+`df6414eb3c3008bad555742773bcfe8326071ac5d0a5b7762f93247c627ad050`) contains
+300 maps and matches the saved submission folder byte-for-byte and pixel-for-
+pixel. Regenerating all 300 maps from this checkout with NumPy 1.26.4, SciPy
+1.13.1, and Pillow 10.4.0 produced matching shapes and at most a one-level
+8-bit pixel difference; this is close reproduction, not bit-exact reproduction.
+
+The CAT2000 archive (`CAT2000_MFA_submit.zip`, SHA-256
+`3ac0eb54944f49f832af152fa95d6f82cf8fd78cd68db76e8ef4a2def98bfb8f`) contains
+2,000 maps and likewise matches its saved submission folder exactly. A rerun
+through the documented max-640-pixel generation path reproduced 1,717 maps
+pixel-for-pixel; 283 differed, with all output shapes matching. Spot checks of
+those differences found examples reproduced exactly by full-resolution
+inference, alongside examples reproduced by the 640-pixel path. The submitted
+CAT2000 archive therefore appears to contain maps from more than one inference
+scale. The exact per-image generation path for all 2,000 maps has not been
+reconstructed, so the official CAT2000 score should be attributed to the
+submitted archive, not claimed as a clean rerun of one uniform configuration.
+
+Local MIT1003 results and official hidden-test scores are distinct.
 
 ### Local evaluation caveats
 
