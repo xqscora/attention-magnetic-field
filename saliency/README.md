@@ -117,9 +117,13 @@ pip install -r requirements.txt
 
 ## License
 
-The source code uses [GNU GPL v3.0](../LICENSE), as specified by the repository
-license. Commercial use is permitted subject to its terms; redistribution of
-covered software must comply with the GPL's corresponding-source requirements.
+The source code uses the [PolyForm Noncommercial License 1.0.0](../LICENSE).
+It permits use, modification, and redistribution only for purposes allowed by
+the license and does not grant permission for commercial-purpose use. The
+license does not require downstream modified versions to publish source code
+or use the same license, so it is not GPL-style copyleft. See the root README
+for the repository-wide scope and the license text for permitted-purpose
+details.
 
 ## References
 
