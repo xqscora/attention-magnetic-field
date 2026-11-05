@@ -126,8 +126,16 @@ Main figures (Fig 1-6) and supplementary simulation screenshots (Fig S1-S4) are 
 
 ## License
 
-The source code in this repository is licensed under the
-[GNU General Public License v3.0](LICENSE).
+The software source code in this repository is licensed under the
+[PolyForm Noncommercial License 1.0.0](LICENSE). It permits use, modification,
+and redistribution only for permitted purposes stated in the license; it does
+not grant permission for commercial-purpose use. The licensor may grant
+separate commercial permission.
+
+This is a source-available noncommercial license, not an OSI-approved open
+source license. It permits noncommercial modifications and distribution but
+does not require downstream modified versions to publish their source code or
+use the same license.
 
 Separately published research materials, including Zenodo records, and
 third-party dependencies retain their own license terms. This notice does not
